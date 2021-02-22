@@ -8,35 +8,74 @@ This is plain script.
 
 I am creating a Rmarkdown script for journal club.
 
-# Headline
-+ bullet list
-+ bullet list
 
-## Subheadline
-
-**bold**
-*italics*
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+```{r load libraries}
+library(tidyverse)
+library(readr)
+library(ggplot2)
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+clean_background <- theme(plot.background = element_rect("white"),
+        panel.background = element_rect("white"),
+        panel.grid = element_line("white"),
+        axis.line = element_line("gray25"),
+        axis.text = element_text(size = 12, color = "gray25"),
+        axis.title = element_text(color = "gray25"),
+        legend.text = element_text(size = 12),
+        legend.key = element_rect("white"))
 
-```{r cars}
-summary(cars)
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+```{r upload data and explore}
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+
+np_parks <- read_csv("National Parks Visitation Data.csv")
+class(np_parks)
+
+# explore
+
+names(np_parks)
+dim(np_parks)
+class(np_parks)
+
+summary(np_parks$Visitors)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+
+df1 <- select(np_parks, Region:YearRaw)
+
+df2<- filter(df1, Region == "SE" & Type == "National Park")
+
+df3 <- arrange(df2, Code, YearRaw)
+
+df4 <- mutate(df3, kVis = Visitors/1000)
+
+summary(df4)
+
+class(df5$YearRaw)
+
+unique(df5$YearRaw)
+
+# == equal
+# != not equal
+
+df5 <- filter(df4, YearRaw != "Total")
+
+df5$YearRaw <- as.numeric(df5$YearRaw)
+
+
+# compare
+
+dim(np_parks)
+dim(df5)
+```
+
+
