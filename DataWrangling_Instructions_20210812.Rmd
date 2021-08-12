@@ -1,0 +1,524 @@
+---
+title: "Data Wrangling Instructions UCSB Summer Workshop"
+author: "sbsambado"
+date: "8/11/2021"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 1
+    toc_float: true
+---
+
+This file is intended to be an intro to data wrangling and tidyverse for summer programming students at UCSB in summer 2021.
+
+
+## Workshop Agenda for August 12, 2021
+
++ Check in & recap 
+
++ The Big Picture  
+
++ Tidyverse - yes again, you can't get enough of this stuff!
+
++ Exercises    
+
++ How to Google when you don't know how to do the exercises 
+
+
+----------------------------
+
+
+# Check in & Recap
+
+You've already learned so much! The more you practice R, the more fun it becomes.
+
+#### Workshop 1 & 2: Intro to R & RStudio
+
++ Got introduced to R & learned some common terminology like **vectors, functions, dataframes**
+
+#### Workshop 3: Data Management & Organization
+
++ Key concepts to staying organizing & building on your common terminology knowledge by incorporating **annotation, plotting, tidying**
+
+
+#### Workshop 4: Data Wrangling
+
++ In order to wrangle your data, you must know what your data R (bad pun). 
+
+
++ We will 1) incorporate some **core concepts** about data and 2) then build on your **tidying** skills to learn how to answer specific questions. 
+
+
+----------------------------
+
+# The Big Picture
+
+### 1. Data + R = a tool to tell a story
+
+So much data exists in our world! With R, you have the ability to use that data to ask and answer questions. There are many ways to tell a story, but there are some general guidelines on how to build that story:
+
++ First ask yourself, what is your outcome of interest - your **dependent** variable 'y'?
+
++ Then ponder, what is influencing your outcome of interest - your **independent** variable 'x'? 
+
+
+Some questions you may have that R could theoretically solve for you:
+
++ Does soil type (**independent**) influence tree height (**dependent**)?
+
++ Does distance from ocean (**independent**) influence rent costs (**dependent**)?
+
++ Do twitter mentions (**independent**) influence cryptocurrency value (**dependent**)?
+
+
+
+
+### 2. Your type of data determines how you can shape your story
+
+
+##### Main groups
+
++ **Numerical** --> numbers, duh.
+
++ **Categorical** --> characteristics, like words.
+
+
+
+##### Subgroups
+
++ **Continuous** --> numbers can take on **any** value
+
+  + example: height, weight, temperature
+  
+
++ **Discrete** --> numbers or words can only be **certain** values
+
+  + example: days of the week, # of kids in a class, pet type
+  
+  
+  
+##### Sub-subgroup of discrete
+
++ **Nominal** --> discrete units with no order
+
+  + example: languages, countries, ICUN status
+  
+  
++ **Ordinal** --> discrete unites with order
+
+  + example: months of year, levels of education, TA reviews
+  
+
+
+### 3. Once you understand your story, then you can hop into data wrangling - yeehaw.
+
++ Data wrangling will require a lot of wrangling
+
+
++ Be prepared to try **a lot** of different stuff 
+
+
++ Off the top of your head, you only need to know how to google. 
+
+
+
+
+#### Okay, end philosophical ramble. Let's get started. 
+
+
+----------------------------
+
+# Tidyverse - yes again, you can't get enough of this stuff!
+
+
+
+### Background
+
+tidyverse isn't a package, it's a collection of packages
+
++ just like universities are made up of colleges that have specific functions
+
+
+
+### Rules
+
++ Each **variable** has its own **column**
+
++ Each **observation** has its own **row**
+
++ Each **value** has its own **cell**
+
+
+
+### Additional Resources - check 'em out!
+*Note: Script for this workshop was largely taken from these sources*
+
+[Basic Tidyverse Concepts](https://homerhanumat.github.io/r-notes/tidyverse-concepts.html)
+
+
+[Tidyverse with animations](https://www.garrickadenbuie.com/project/tidyexplain/)
+
+
+[Tidyverse-cookbook](https://rstudio-education.github.io/tidyverse-cookbook/tidy.html)
+
+
+[YaRrr! The pirate’s guide to R -- chapter 10.4](https://bookdown.org/ndphillips/YaRrr/dplyr.html)
+
+
+### The Set Up
+
+```{r setup, include=FALSE, message = FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE) 
+
+### basic command line structure ###
+    # object <- function(argument)
+```
+
+
+1. Libraries needed for this workshop
+```{r, message = FALSE}
+
+# remember, install.packages("PACAKGE") then library(PACKAGE)
+  ## Note: quotations for install.packages(), no quotations for libary()
+
+# you only need to install a package once to call the library
+
+# after you install.packages(), then hashtag # install.packages()
+
+# install.packages("tidyverse")
+library(tidyverse) # package to use tidyverse functions
+
+# install.packages("devtools")
+library("devtools") # package to call data from
+
+# specific githubs you will call information from
+devtools::install_github("homerhanumat/bcscr")
+devtools::install_github("homerhanumat/tigerData")
+
+
+# install.packages("mosaicData")
+library(mosaicData) # package to call data from
+
+
+```
+
+2. Data needed for this workshop
+```{r}
+## we will be using online datasets so we don't have to worry about file paths for now. There are many ways to call in data from the internet compared to when you are uploading a dataset from your own Rproj
+
+# data from github for examples
+
+# dataset 1 for examples
+survey <- bcscr::m111survey # comes from homerhanumat github
+
+# dataset 2 for examples
+data(CPS85) # comes from package `mosaicData`
+
+# dataset 3 for exercise 
+data("flights", package = "nycflights13") # data built into R for exercises
+
+```
+
+
+
+
+
+### Basics of Tidyverse functions
+
+Note: try to annotate the code on your own as we walk through the script
+
+#### 1. pipe operator `%>` : chains function together
+
+```{r pipe operator}
+# using pipe operator
+"hello" %>% rep(times = 4)
+
+# without pipe operator
+rep("hello", times = 4)
+```
+
+
+#### 2. tibble : type of dataframe suited for tidyverse
+
+```{r tibble}
+# dataframe
+class(survey) # dataframe 
+
+# convert dataframe to tibble
+survey <- as_tibble(survey)
+class(survey) # now a tibble
+
+```
+
+
+#### 3. dplyr package : tool for data manipulation
+
++ a. `filter()` and `select()` for sub-setting
+
++ b. `mutate()` for transforming variables
+
++ c. `group_by()` and `summarise()` for numerical summaries
+
++ d. `fivenum()` for all 5 summaries 
+
+
+Example a: **`filter()` and `select()`** to chose optimal observations & variables
+
+```{r filter and select}
+
+# we will use dataset survey from homerhanumat github that are the results of a survey of MAT 111 students at Georgetown College
+
+# always look at your new dataset 
+  # dim(survey)
+  # head(survey)
+
+
+
+
+######## okay let's wrangle ######## 
+
+## usually filter() and select() are your first arguments when you get a dataset
+
+
+##### With the survey data, I specifically want to look at 
+    # 1) men over 70 inches tall AND women less than 55 inches tall
+    # 2) I want to select columns/variable 'sex', 'height', 'fastest' for later analysis
+
+
+survey %>% # call tibble
+  filter((sex == "male" & height > 70) | (sex == "female" & height < 55)) %>% 
+  select(sex, height, fastest) 
+
+
+
+
+
+
+
+##### What if I want more columns/variables to explore height across the sexes?
+
+# let's leave out columns/variables ; use `-`
+survey %>%
+  select(-ideal_ht, -love_first) 
+
+
+
+
+
+
+
+##### What if I don't care about height and I want to know who believes in love at first sight and sleeps less than 7 hours a night?
+
+# want to see how many observations you have left post subsetting?
+survey %>%
+  filter(love_first == "yes" & sleep < 7) %>%
+  nrow() 
+
+```
+
+Example b: **`mutate()`** to transform variables
+```{r mutate}
+# keep new variable name on LEFT side of `=`
+# keep function on RIGHT side of `=` that depends on the current value in the tibble
+
+
+
+
+
+##### What if I want to see which sex drives the fastest and think sex is the determining factor for driving speed (i.e. I only want to keep a couple columns)?
+
+survey %>%
+  mutate(dareDevil = fastest > 125) %>% 
+  select(sex, fastest, dareDevil) 
+
+
+
+
+
+##### What if I want to see if GPA influences driving speed and I don't understand MPH?
+  # 1) convert MPH to KmHR  
+  # 2) plot driving speed (KmHR) by GPA and color groups by dareDevil status 
+
+survey %>%
+  mutate(dareDevil = fastest > 125, 
+         speedKmHR = fastest * 1.60934) %>% 
+  ggplot(aes(x = speedKmHR, y = GPA, color = dareDevil)) + 
+  geom_jitter(width = 0.2) + 
+  theme_bw() +
+  geom_hline(yintercept = 3.0)
+
+```
+
+Example c:  **`group_by()` and `summarise()`** to generate numerical summaries 
+
+```{r group_by and summarise}
+
+## NEW DATASET 
+
+# we will use dataset CPS85 from the MosaicData package that is data from the 1985 Current Population Survey
+
+# always look at your new dataset 
+  # dim(CPS85)
+  # head(CPS85)
+
+
+######## okay let's wrangle ########
+
+
+
+
+##### What if I am interested in the mean wage of each sex?
+
+CPS85 %>% # tibble that comes from the `mosaicData`
+  group_by(sex) %>%  
+  summarize(meanWage = mean(wage)) 
+
+
+
+
+
+##### What if I want to count individuals of each sex and their mean wage?
+
+# create more than 1 summary variable
+
+CPS85 %>% 
+  group_by(sex) %>% 
+  summarize(meanWage = mean(wage),
+            n = n()) 
+
+
+```
+
+
+Example d: if you want to run all 5 summaries (which you should), use `fivenum()` function
+
+```{r other summaries}
+
+##### What if I'm interested in wage statistics for everybody in the survery? Might be an inappropriate comparison. 
+
+CPS85 %>%
+  .$wage %>% 
+  fivenum() 
+
+
+
+##### What if I'm interested in wage statistics for each sex? Probably a more appropriate comparison. 
+
+CPS85 %>%
+  group_by(sex) %>% 
+  summarise(n = n(), 
+            min = fivenum(wage)[1],
+            Q1 = fivenum(wage)[2],
+            median = fivenum(wage)[3],
+            Q3 = fivenum(wage)[4],
+            max = fivenum(wage)[5])
+
+
+
+##### What if I'm interested in wage statistics for each sex AND sector? Probably the most appropriate summary. 
+
+CPS85 %>% 
+  group_by(sector, sex) %>%  
+  summarise(n = n(), 
+            min = fivenum(wage)[1], 
+            Q1 = fivenum(wage)[2],
+            median = fivenum(wage)[3],
+            Q3 = fivenum(wage)[4],
+            max = fivenum(wage)[5])
+```
+
+# Exercises 
+
+Try to fill in the structure that is provided in the exercises. If you can't figure out the structure, try googling some answers. There are many ways to solve one problem in R. And if you're stuck in google, the answers to the exercises are on the bottom of the document.
+
+
+1. How many flights occurred on April 18th? 
+```{r}
+
+## HINT: use the structure I have provided below, fill in the appropriate DATASET, VARIABLE, FUNCTION you are wrangling
+
+# DATASET %>%
+#   FUNCTION(VARIABLE == 4 & VARIABLE == 18) %>%
+#   nrow()
+
+```
+
+
+2. Count the number of flights that left (departures) individual airports (origin).
+
+```{r}
+
+## HINT: use the structure I have provided below, fill in the appropriate DATASET, VARIABLE, FUNCTION you are wrangling
+
+# DATASET %>%
+#   filter(!is.na(dep_delay)) %>% # remove NAs
+#   group_by(VARIABLE1) %>% # where are flights taking off
+#   summarise(VARIABLE2 = n()) # count how many flights left
+
+
+```
+
+
+3. CHALLENGE: Count the number of flights that left individual airports AND create a new column that calculates the mean departure delay.
+
+```{r}
+
+## HINT: same as exercise 2 but now you are adding an additional summarise() argument
+
+# dataset %>%
+#   filter(!is.na(dep_delay)) %>% # remove NAs
+#   group_by(VARIABLE1) %>% # where are flights taking off
+#   summarise(VARIABLE2 = n(),
+#     meanDelay = FUNCTION(dep_lay)) # creating new column called 'meanDelay'
+
+
+```
+
+
+# Google is your friend
+
+
+I cannot emphasize enough that as a coder, you don't need to memorize anything. Personally as a coder, I rarely code without having google or my github open. R is great because there is a vast community of coders from all levels who are eager to help - so utilize those resources!
+
+Some tips for when you are googling:
+
++ use language that the R community is familiary with. Instead of using the actual names from your dataset, describe things as variables, rows, columns, datasets, etc.
+
++ start basic and then expand your search. Maybe start with 'How to select rows' and then 'How to select rows by multiple variables'. The simpler search may lead you to more internet threads. 
+
++ use tag words for your search such as: R, tidyverse, ggplot or other package and library names. So you would ask 'How to select rows in R using tidyverse'
+
++ Recommend help platforms like Stack Overflow, Datanovia, R cheatsheets 
+
+
+## Exercise answers (it's okay we've all been there)
+
+Exercise 1 answer
+
+```{r}
+flights %>%
+  filter(month == 4 & day == 18) %>%
+  nrow()
+```
+
+
+Exercise 2 answer
+
+```{r}
+flights %>% 
+  filter(!is.na(dep_delay)) %>% 
+  group_by(origin) %>%
+  summarise(departures = n()) 
+```
+
+Exercise 3 answer
+
+```{r}
+flights %>% 
+  filter(!is.na(dep_delay)) %>% 
+  group_by(origin) %>%
+  summarise(departures = n(),
+            meanDelay = mean(dep_delay))
+```
+
+

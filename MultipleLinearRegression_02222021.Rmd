@@ -26,15 +26,23 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r package, dataset, message=FALSE}
 # packages needed
-library(tidyverse)
+library(tidyverse) 
 library(corrplot)
-library(stargazer)
-library(psych)
+library(stargazer) # tables
+library(psych) # pairs.panel
 
 # data
 homes <- read_csv("slo_homes.csv") # Read in data
-homes_sub <- homes %>% 
-  filter(City == "Arroyo Grande" | City == "San Luis Obispo" | City == "Atascadero" | City == "Santa Maria-Orcutt")
+str(homes) # 781 observations, 7 columns/variables
+
+# NEW DATASET <- OLD DATASET
+homes_sub <- homes %>% # PIPE, AND THEN WE DO THIS
+  filter(City == "Arroyo Grande" | City == "San Luis Obispo" | City == "Atascadero" | City == "Santa Maria-Orcutt") 
+
+dim(homes_sub) #403 observations, 7 variables
+str(homes_sub)
+summary(homes_sub)
+
 ```
 
 ###2. Background on multiple linear regression
@@ -43,11 +51,11 @@ Most outcomes of interest (Y) don't have a perfect linear relationship with only
 **y ~ x** 
 
 linear regression: **y** = intercept (beta0) + slope of **X** (beta1X1) + error
-  plant = intercept + sunlight + error
+  plant height = intercept + sunlight + error
   *one beta (beta1) is being estimated*
 
 multiple linear regression: **y** = intercept + slope of **X1** (beta1X1) + slope of **X2**(beta2X2) + slope of **X3**(beta3X3) + error
-  plant = intercept + sunlight + species + precipitation 
+  plant height = intercept + sunlight + species + precipitation 
   *three betas (beta1, beta2, beta3) are being estimated*
 
 
@@ -68,20 +76,42 @@ mean_by_city <- homes_sub %>%  # create variable 'mean_by_city' with 'homes_sub'
 
 by_city <- ggplot(homes_sub, aes(x = Price)) + 
   geom_density(aes(color = City, fill = City), alpha = 0.3) + # Note: show difference btween color and fill
-  theme_classic() + # there's multiple themes, show theme_bw
+  theme_bw() + # there's multiple themes, show theme_bw
   scale_x_continuous(expand = c(0,0), limits = c(0,3e6)) +
   scale_y_continuous(expand = c(0,0)) +
   labs(x = "Home Prices (USD)", y = "Density")
 by_city
+
+# example of collinearity
+
+# child height ~ mom's height + nutrition (2x)
+# child height ~ mom's height + mom's jean length, this is high collinearity, avoid this (2X) --> 1X
+
+pairs.panels(homes_sub, lm =TRUE)
+dim(homes_sub)
+
+# correlation: y ~ x 
+# correlation co-efficient - 1 to 1
+# - 1 negative relationship 
+# + 1 positive relationship 
+# 0 flat line, there is no relationship 
 ```
+price ~ city
+
 
 Or another question: Overall relationship between home square footage and price, separated by City? 
 
 y ~ x
 **home price ~ square footage**
 ```{r by_sqft}
+
+# 2 numeric --> geom_point
+# 1 numeric, 1 categorical --> boxplot
+
+max(homes_sub$SqFt)
 by_sqft <- ggplot(homes_sub, aes(x = SqFt, y = Price)) +
-  geom_point(aes(color = City, pch = Status), alpha = 0.5) 
+  geom_point(aes(color = City, pch = Status), alpha = 0.5) +
+  theme_light()
 by_sqft
 # Observations here: Does relationship appear ~ linear? Anything else we can pick out re: trends, outliers, etc.? What is the general trend? Any outliers? Is there reason enough for us to omit it?
 ```
@@ -94,7 +124,7 @@ pairs.panels(homes_sub)
 # bottom right numbers are regression models
 
 # play around with arguments
-pairs.panels(homes_sub, cor = FALSE)
+pairs.panels(homes_sub, cor = TRUE)
 pairs.panels(homes_sub, density = FALSE)
 pairs.panels(homes_sub, lm = FALSE)
 
@@ -103,12 +133,17 @@ pairs.panels(homes_sub, lm = FALSE)
 hist(homes_sub$Price) # not normal
 hist(log(homes_sub$Price)) # more normal
 
+
 # let's make a new column for log transformed price
 
 homes_sub$log_price <- log(homes_sub$Price) # create new colum 'log_price' in homes_sub dataset
 
+homes_sub$log_price <- as.numeric(homes_sub$log_price)
+str(homes_sub)
+
+
 # Relationships for variables we think are important:
-homes_sub_import <- subset(homes_sub, select = c(3,4,5,6,8)) # remember to choose log price and not price
+homes_sub_import <- subset(homes_sub, select = c(3,4,5,8)) # remember to choose log price and not price
 pairs.panels(homes_sub_import) # what has a high correlation coefficieent with out outcome of interest, log price?
 ```
 
@@ -134,11 +169,22 @@ summary(homes_lm1)
 ### Looking at summary, I recommend looking at the following items
 
 # Call: lm(y~x) formula. Make sure you are looking at the right model!
-# p-value: tells you if your model is a significant predictor for slopes of Xs, for this model p = < 2.2e-16 (significant!)
-# F-statistic: your F crit, did added coefficients improve model, for this model F = 245.9
-# Intercept: this is your beta0, for this model beta0 = -626690.88
-# Estimates: describes relationship between predictor variable & response, for this model looking at 'SqFt' estimate = 230.73
-# Multple R-square: how much variation can be described with your model, for this model Multiple R^2 = 0.8492
+
+# p-value: 
+  # tells you if your model is a significant predictor for slopes of Xs, for this model p = < 2.2e-16 (significant!)
+
+# F-statistic: 
+  #your F crit, did added coefficients improve model, for this model F = 245.9
+
+# Intercept: 
+  #this is your beta0, for this model beta0 = -626690.88
+
+# y = mx + b
+# Estimates: 
+  #describes relationship between predictor variable & response, for this model looking at 'SqFt' estimate = 230.73
+
+# Multple R-square: 
+  #how much variation can be described with your model, for this model Multiple R^2 = 0.8492
 
 ```
 
@@ -152,11 +198,11 @@ summary(homes_lm2) # NOW this is something that makes sense conceptually and mat
 
 # what is the 
   # y~x(s) relationship that you are investigating?
-  # what if your p-pvalue?
+  # what if your p-pvalue? #  p-value: < 2.2e-16
   # what is your F-statistic?
-  # what is your intercept (beta0)?
+  # what is your intercept (beta0)? # 106333.12
   # what is an estimate for a strong predictor variable?
-  # what is your multiple R^2?
+  # what is your multiple R^2? # 0.5339 --> 53% of variation is explained by model homes_lm2
 ```
 
 Wait...but what if I wanted everything to be with respect to a Regular sale status? Then I need to change my factor levels. We've done this before, here we'll use a different function (fct_relevel) from *forcats* package in the tidyverse. 
@@ -289,5 +335,7 @@ ggplot(predict_df, aes(x = SqFt, y = fit.fit)) +
   scale_x_continuous(limits = c(500,3500), breaks = seq(500, 3500, by = 1000)) +
   scale_y_continuous(limits = c(0,1.5e6))
   theme_light() 
+  
+  homes_sub
 ```
 

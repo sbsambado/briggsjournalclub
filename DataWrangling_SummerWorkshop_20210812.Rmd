@@ -1,0 +1,261 @@
+---
+title: "Basic Data Wrangling"
+author: "sbsambado"
+date: "8/11/2021"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 1
+    toc_float: true
+---
+
+This file is intended to be an intro to data wrangling and tidyverse for summer programming at UCSB in summer 2021.
+
+
+Workshop Agenda (8/12/21)
+
+1. The Big Picture: Let's think about data
+2. Tidyverse
+3. Examples
+
+# 1. The Big Picture
+## 1. Data visualization is meant to convey a story. 
+There are many ways to tell a story, but there are some general guidelines on how to build that story
+
+  + What is your outcome of interest - your **dependent** variable 'y'? 
+      + That outcome should be placed on the y-axis
+  
+  + What is influencing your outcome of interest - your **independent** variable 'x'? 
+    + That should be placed on the x-axis
+  
+## 2. Your type of data determines how you shape your data 
+        +  Numeric: numbers
+        
+        +  Categorical: words
+        
+        +  Continuous: numbers can take on **any** value
+        
+        +  Discrete: numbers or words can only be **certain** values
+
+## 3. Plotting basics
+    + If you're only plotting 1 numeric variable --> histogram (ggplot geom: geom_histogram)
+    
+    + If y and x are **both** numeric --> scatterplot (ggplot geom: geom_point)
+    
+    + If y is numeric, and x is categorical --> boxplot (ggplot geom: geom_boxplot)
+
+# 3. Data visualization is the **first** AND **last** step of statistical analysis
+
+  +  Be prepared to make a lot of changes along the way & have fun with it!
+  
+  + Figures will never be 100% perfect in the creator's eyes, but if it tells your story in a **clear and effective** way, then that is a job *well done*.
+
+Okay, end philosophical ramble. Let's get started.    
+
+
+Here are helpful links I derive a lot of my information about tidyverse & `dplyr` : 
+
+[Basic Tidyverse Concepts](https://homerhanumat.github.io/r-notes/tidyverse-concepts.html)
+
+
+[Tidyverse with animations](https://www.garrickadenbuie.com/project/tidyexplain/)
+
+
+[Tidyverse-cookbook](https://rstudio-education.github.io/tidyverse-cookbook/tidy.html)
+
+
+[YaRrr! The pirate’s guide to R -- chapter 10.4](https://bookdown.org/ndphillips/YaRrr/dplyr.html)
+*I also think this is an excellent guide for beginners to R!*
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE) # this means
+
+## necessary libraries
+# remember, install.packages("PACAKGE") then library(PACKAGE)
+# you only need to install a package once to call the library
+# after you install.packages(), then hashtag # install.packages()
+
+# install.packages("tidyverse")
+library(tidyverse)
+# install.packages("devtools")
+library("devtools")
+# install.packages("mosaicData")
+library(mosaicData)
+
+## two packages to accompany the text
+devtools::install_github("homerhanumat/bcscr")
+devtools::install_github("homerhanumat/tigerData")
+
+
+```
+
+## *tidyverse isn't a package, it's a collection of packages* 
+**just like universities are made up of colleges that have specific functions**
+
+### Tidy data has the following rules
+
++ 1. Each **variable** has its own **column**
+
++ 2. Each **observation** has its own **row**
+
++ 3. Each **value** has its own **cell**
+
+#### Basics
+
+**1. pipe operator `%>` : chains function together**
+
+```{r}
+# using pipe operator
+"hello" %>% rep(times = 4)
+
+# without pipe operator
+rep("hello", times = 4)
+```
+
+**2. tibble : type of dataframe suited for tidyverse**
+
++ good for large datasets
+```{r}
+# dataframe
+survey <- bcscr::m111survey # uploading a 
+class(survey)
+
+# convert to tibble
+survey <- as_tibble(survey)
+class(survey)
+```
+
+
+**3. dplyr package: tool for data manipulation** 
+
++ a. `filter()` and `select()` for sub-setting
+
++ b. `mutate()` for transforming variables
+
++ c. `group_by()` and `summarise()` for numerical summaries
+
+
+a. examples of **`filter()` and `select()`** to chose optimal observations & variables
+```{r}
+# usually filter() and select() are your first arguments when you get a dataset
+survey %>% # call tibble
+  filter((sex == "male" & height > 70) | (sex == "female" & height < 55)) %>% # filter picks out rows/observations ## we're selecting observations that are men > 70 in tall AND women < 55 in tall
+  select(sex, height, fastest) # selects picks out columns/variables
+# let's leave out columns/variables ; use `-`
+survey %>%
+  select(-ideal_ht, -love_first) # still have lots of columns left!
+# want to see how many observations you have left post subsetting?
+survey %>%
+  filter(love_first == "yes" & fastest > 120) %>%
+  nrow() # count the rows/observations left
+```
+
+b. examples of **`mutate()`** to transform variables
+```{r}
+# keep new variable name on LEFT side of `=`
+# keep function on RIGHT side of `=` that depends on the current value in the tibble
+survey %>%
+  mutate(dareDevil = fastest > 125) %>% # make new column/variable called dareDevil ## this will provide TRUE (> 125) /FALSE (< 125) for each observation with regards to its fastest value
+  select(sex, fastest, dareDevil) # select desired variables
+# You can double dip mutations within one line of code
+survey %>%
+  mutate(dareDevil = fastest > 125, 
+         speedKmHR = fastest * 1.60934) %>% # made two new variables/columns based on previous data in column 'fastest')
+  ggplot(aes(x = dareDevil, y = GPA)) + # plot these new variable values
+  geom_boxplot(fill = 'burlywood', outlier.alpha = 0) + # using boxplot to visualize datat
+  geom_jitter(width = 0.2) # avoid points overlapping and making them a certain size
+  
+```
+
+
+
+c. examples of **`group_by()` and `summarise()`** to generate numerical summaries 
+
++ *^^ my most used functions in dplyr*
+
+```{r}
+CPS85 %>% # tibble that comes from the `mosaicData`
+  group_by(sex) %>% # divide observations based on their values/observations in the variable 
+  summarize(meanWage = mean(wage)) # make new tibble that has mean wage for each level of sex, you will only have two columns/variables in this tibble 1) sex and 2) meanWage
+# create more than 1 summary variable
+CPS85 %>% 
+  group_by(sex) %>% 
+  summarize(meanWage = mean(wage),
+            n = n()) # n() is the count function, very helpful for most summaries ## will count total observations for your variable meanWage
+```
+
+**other summaries you can do are:**
+
++ minimum value
++ first quartile (q1)
++ median 
++ third quartile (q3)
++ max
+
+if you want to run all 5 summaries (which you should), use `fivenum()` function
+```{r}
+# summaries for entire tibble (men and women included)
+CPS85 %>%
+  .$wage %>% # select one column/vector of information you want to summarize
+  fivenum() # run all 5 summary statistics
+# summaries broken down for each sex (more appropriate of comparisons!)
+CPS85 %>%
+  group_by(sex) %>% 
+  summarise(n = n(), # count observations
+            min = fivenum(wage)[1],
+            Q1 = fivenum(wage)[2],
+            median = fivenum(wage)[3],
+            Q3 = fivenum(wage)[4],
+            max = fivenum(wage)[5])
+# you can also compare multiple variables by group
+CPS85 %>% 
+  group_by(sector, sex) %>%  # looking at SEX and SECTOR
+  summarise(n = n(),
+            min = fivenum(wage)[1],
+            Q1 = fivenum(wage)[2],
+            median = fivenum(wage)[3],
+            Q3 = fivenum(wage)[4],
+            max = fivenum(wage)[5])
+```
+
+
+# More practice!
+
+```{r}
+data("flights", package = "nycflights13")
+```
+
+**filter out NA cases**
+
++ Want to correctly count number of flights that left airport
+```{r}
+flights %>% 
+  filter(!is.na(dep_delay)) %>% 
+  group_by(origin) %>%
+  summarise(departures = n(),
+            meanDelay = mean(dep_delay))
+```
+
+**filter for a specific date**
+
++ Find flights that occurred on June 26
+```{r}
+flights %>% 
+  filter(month == 6 & day == 26) %>% 
+  ggplot(aes(x = origin, y = distance)) +
+    geom_violin(fill = "burlywood") +
+    geom_jitter(width = 0.25, size = 0.1)
+```
+
+**filter for specific date, variable value and types of variables**
+
++ Find flights that occurred on June 26 that were over 4000 mi and chose only relevant information of origin, destination, and distance
+```{r}
+flights %>% 
+  filter(month == 6 & day == 26 & distance > 4000) %>% 
+  select(origin, dest, distance)
+
+```
+
